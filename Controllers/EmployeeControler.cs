@@ -2,12 +2,13 @@
 using Microsoft.AspNetCore.Http;
 using MyCompany_BackEnd.Context;
 using MyCompany_BackEnd.Models;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using MyCompany_BackEnd.DTO;
+using MyCompany_BackEnd.NewFolder;
 
 namespace MyCompany_BackEnd.Controllers
 {
-
+    // TODO: ADD documentacion
     [Route("api/[controller]")]
     [ApiController]
     public class EmployeeControler : Controller
@@ -19,6 +20,7 @@ namespace MyCompany_BackEnd.Controllers
             _context = context;
         }
 
+        #region Get Calls
         [HttpGet]
         public async Task<ActionResult<List<Employee>>> Get()
         {
@@ -34,20 +36,27 @@ namespace MyCompany_BackEnd.Controllers
 
             return Ok(query);
         }
+        #endregion
 
+        #region POST calls
         [HttpPost]
-        public async Task<ActionResult<Employee>> Post(Employee employee)
+        public async Task<ActionResult<Employee>> Post(EmployeeDTO employee)
         {
             //TODO: crear objecto employee y agregar fields faltantes
-            Employee employee1 = new Employee() {Active = true, FirstName = employee.FirstName,};
-            employee.Active = true;
+            Employee employee1 = new Employee() {Active = true,
+                FirstName = employee.FirstName,
+                LastName = employee.LastName, 
+                FK_Department = employee.FK_Department};
+            //employee.Active = true;
 
-            _context.AllEmployees.Add(employee);
+            _context.AllEmployees.Add(employee1);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(Get), new { id = employee.PK_Employee }, employee);
+            return CreatedAtAction(nameof(GetID), new { id = employee1.PK_Employee }, employee);
         }
+        #endregion
 
+        #region PUT calls
         [HttpPut("{id}")]
         public async Task<IActionResult> DeactivateEmployee(int id)
         {
@@ -61,7 +70,26 @@ namespace MyCompany_BackEnd.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+ 
 
-        // TODO: update call 
+        [HttpPut] //    TODO modificar para recivir employeeDTO
+        public async Task<IActionResult> UpdateEmployee(UpdateEmployeeDTO employee)
+        {
+            //var employeeDB = await _context.AllEmployees.FindAsync(employee.PK_Employee);
+            var employeeDB = await _context.AllEmployees.FindAsync(employee.PK_Employee);
+            if(employeeDB == null)
+            {
+                return BadRequest();
+            }
+
+            employeeDB.FirstName = employee.FirstName;
+            employeeDB.LastName = employee.LastName;
+            employeeDB.FK_Department = employee.FK_Department;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        #endregion
     }
 }
